@@ -32,6 +32,7 @@ const cardBtnOpen = document.querySelector('.cart-btn')
 const cartBtnClose = document.querySelector('.cart-dropdown__close')
 const cardDropdown = document.querySelector('.cart-dropdown')
 const cartDropdownContent = document.querySelector('.cart-dropdown__content')
+const carDropdownPrice = document.querySelector('.cart-dropdown__price')
 
 cardList.forEach(function(card, cardKey) {
   const cardBtn = card.querySelector('.card-btn')
@@ -44,6 +45,7 @@ cardList.forEach(function(card, cardKey) {
   
   cardBtn.addEventListener('click', function(event) {
     event.preventDefault()
+    let totalSumm = 0
     cardBtn.classList.add('active')
     cardAmount.classList.add('active')
     cardCount.classList.add('active')
@@ -55,11 +57,14 @@ cardList.forEach(function(card, cardKey) {
     arrProducts.forEach(function(obj, keyObj) {
       const item = cartItemTemplate(obj)
       cartDropdownContent.append(item)
+      totalSumm += obj.summ()
+      carDropdownPrice.textContent = totalSumm
     })
   })
   cardSymbol.forEach(function(btn, key) {
     btn.addEventListener('click', function(event) {
       event.preventDefault()
+      let totalSumm = 0
       const symbol = btn.textContent
       console.log(symbol);
       if(symbol == "+" && products[cardId].amount <= 9) {
@@ -67,6 +72,13 @@ cardList.forEach(function(card, cardKey) {
       } else if(symbol == "-" && products[cardId].amount <= 9) {
         products[cardId].amount--
       }
+      cartDropdownContent.innerHTML = ''
+      arrProducts.forEach(function(obj, keyObj) {
+        const item = cartItemTemplate(obj)
+        cartDropdownContent.append(item)
+        totalSumm += obj.summ()
+        carDropdownPrice.textContent = totalSumm
+      })
       cardAmount.textContent = products[cardId].amount
       countItemAmount.textContent = products[cardId].amount
       const cartItemList = document.querySelectorAll('.cart-item')
@@ -124,9 +136,9 @@ function cartItemTemplate({name, amount, price, imgSrc}) {
         img.classList.add('cart-item__img')
         img.src = imgSrc
   const cartContent = document.createElement('div')
-        cartContent.classList.add('.cart-item__content')
+        cartContent.classList.add('cart-item__content')
   const cartText = document.createElement('div')
-        cartText.classList.add('cart-item__content')
+        cartText.classList.add('cart-item__text')
   const cartCount = document.createElement('div')
         cartCount.classList.add('cart-item__count', 'count-item')
   const h5 = document.createElement('h5')
@@ -149,3 +161,50 @@ function cartItemTemplate({name, amount, price, imgSrc}) {
   cartItem.append(img, cartContent)
   return cartItem
 }
+
+// управление карточками в корзинке
+document.addEventListener('click', function(event) {
+  console.log(event)
+  if(event.target.classList.contains('symbol-btn')) {
+    let totalSumm = 0
+    const btn = event.target
+    const parent = btn.closest('.cart-item')
+    const parentId = parent.getAttribute('id')
+    const symbol = btn.innerHTML
+    const cartAmount = parent.querySelector('.cart-item__amount')
+    
+    if(symbol == '+' && products[parentId].amount <= 9) {
+      products[parentId].amount++
+    } else if(symbol == '-' && products[parentId].amount > 0) {
+      products[parentId].amount--
+    }
+    cartAmount.textContent = products[parentId].amount
+    cardList.forEach(function(card) {
+      const cardId = card.getAttribute('id')
+      const cardBtn = card.querySelector('.card-btn')
+      const cardAmount = card.querySelector('.card-content__amount')
+      const cardCount = card.querySelector('.card-count')
+      const countItemAmount = card.querySelector('.count-item__amount')
+      if(parentId == cardId) {
+        cardAmount.textContent = products[parentId].amount
+        countItemAmount.textContent = products[parentId].amount
+        if(products[parentId].amount == 0) {
+          cardBtn.classList.remove('active')
+          cardAmount.classList.remove('active')
+          cardCount.classList.remove('active')
+          parent.remove()
+          carDropdownPrice.textContent = 0
+          arrProducts.forEach(function(item, key) {
+            if(item.amount == 0) {
+              arrProducts.splice(key, 1)
+            }
+          })
+        }
+      }
+    });
+    arrProducts.forEach(function(obj, keyObj) {
+      totalSumm += obj.summ()
+      carDropdownPrice.textContent = totalSumm
+    })
+  }
+})
